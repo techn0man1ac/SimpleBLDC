@@ -5,9 +5,10 @@
 	(uuid "801a6913-b489-4275-a0c4-1a07ab08df36")
 	(paper "A4")
 	(title_block
-		(title "Inverter BLDC")
+		(title "Simple BLDC motor controller")
 		(date "2025-04-04")
 		(rev "V0.1")
+		(company "By #Tech01")
 	)
 	(lib_symbols
 		(symbol "Connector:Conn_01x02_Pin"
