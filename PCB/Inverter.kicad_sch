@@ -5630,7 +5630,7 @@
 		)
 		(uuid "012dab53-4006-4e8c-9717-28aa23f61b60")
 	)
-	(text_box "\n	3-Phase BLDC motor driver specs:\n	- Battery: 8S \n	- VCC: 24.0V to 33.6V\n	- I(max) 20A \n	- Сurrent measurements per phase"
+	(text_box "\n	3-Phase BLDC motor driver specs:\n	- Battery: 8S \n	- VCC: 24.0V to 33.6V\n	- I(max): 20A \n	- Сurrent measurements per phase"
 		(exclude_from_sim no)
 		(at 12.7 165.1 0)
 		(size 121.92 31.75)
