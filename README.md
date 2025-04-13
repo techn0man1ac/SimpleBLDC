@@ -5,6 +5,5 @@
 Simple BLDC 3-Phase BLDC motor driver specs:
 - Battery: 8S 
 - VCC: 24.0V to 33.6V
-- I(max) 20A 
+- I(max): 20A 
 - Сurrent measurements per phase
-
