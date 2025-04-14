@@ -1,5 +1,7 @@
 # SimpleBLDC
 
+This is simple Arduino based 650W BLDC motor(with Hall sensors) controller.
+
 ![BLDC motor driver schematic](https://raw.githubusercontent.com/techn0man1ac/SimpleBLDC/refs/heads/main/PCB/IMGs/Schematic.png)
 
 Simple BLDC 3-Phase BLDC motor driver specs:
