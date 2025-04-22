@@ -2,7 +2,7 @@
 
 This is simple Arduino based 650W BLDC motor(with Hall sensors) controller. Designed with [KiCAD](https://www.kicad.org/).
 
-![BLDC motor driver schematic](https://raw.githubusercontent.com/techn0man1ac/SimpleBLDC/refs/heads/main/PCB/IMGs/Schematic.png)
+![BLDC motor driver schematic](https://raw.githubusercontent.com/techn0man1ac/SimpleBLDC/refs/heads/main/PCB/IMGs/Schematic.jpg)
 
 Simple BLDC 3-Phase BLDC motor driver specs:
 - Battery: 8S 
@@ -20,7 +20,7 @@ The bottom layer contains mainly earth and power tracks.
 
 ![The PCB bottom laye](https://raw.githubusercontent.com/techn0man1ac/SimpleBLDC/refs/heads/main/PCB/IMGs/PCB_back.png)
 
-Board sizes is 71.4 x 105.7mm:
+Board sizes is 71.4 x 98.7mm:
 
 ![BLDC motor driver schematic](https://raw.githubusercontent.com/techn0man1ac/SimpleBLDC/refs/heads/main/PCB/IMGs/PCB_sizes.png)
 
