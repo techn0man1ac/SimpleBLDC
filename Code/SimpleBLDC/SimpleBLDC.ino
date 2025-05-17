@@ -67,9 +67,8 @@ void loop() {
   bool V_State = digitalRead(HAL_V);
   bool W_State = digitalRead(HAL_W);
   
-  Serial.println(String(U_State) + "," + String(V_State) + "," + String(W_State));
-  delay(100);        // delay in between reads for stability
-  
+  Serial.println(String(U_State) + "," + String(V_State) + "," + String(W_State)); // Hall sensor read
+    
   digitalWrite(IN_U, HIGH);
   digitalWrite(IN_V, LOW);
   digitalWrite(IN_W, LOW);
