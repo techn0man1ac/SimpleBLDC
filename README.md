@@ -1,6 +1,6 @@
 # SimpleBLDC
 
-This is simple Arduino based 650W BLDC motor(with Hall sensors) controller. Designed with [KiCAD](https://www.kicad.org/).
+This is simple Arduino based 650W BLDC motor(with Hall sensors) controller. Designed with [KiCAD](https://www.kicad.org/). This controller has version V0.1, which means it is still under development.
 
 ![SimpleBLDC PCB in real life](https://raw.githubusercontent.com/techn0man1ac/SimpleBLDC/refs/heads/main/PCB/IMGs/Real_BLDC_Face.jpg)
 
@@ -11,8 +11,6 @@ Simple BLDC 3-Phase BLDC motor driver specs:
 - Сurrent measurements per phase
 
 ![SimpleBLDC PCB in real life_back](https://raw.githubusercontent.com/techn0man1ac/SimpleBLDC/refs/heads/main/PCB/IMGs/Real_BLDC_back.jpg)
-
-This controller has version V0.1, which means it is still under development.
 
 The device has the following features:
 - XT60 power connector;
