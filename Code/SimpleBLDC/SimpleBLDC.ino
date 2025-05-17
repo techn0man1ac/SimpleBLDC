@@ -7,7 +7,7 @@
 
 #include <avr/power.h>
 
-#define F_CPU 800000UL  // CPU frequency set to 8 MHz mode
+//#define F_CPU 800000UL  // CPU frequency set to 8 MHz mode
 
 #define PWM_U 10
 #define PWM_V 9
@@ -29,11 +29,22 @@ unsigned long previousMillis = 0;
 #define  interval 250 // Telemetry interval
 
 float BattVoltage = 0.0;
+int VoltageRAW = 0;
+int U_CurrentRAW = 0;
+int V_CurrentRAW = 0;
+int W_CurrentRAW = 0;
+float U_Current = 0.0;
+float V_Current = 0.0;
+float W_Current = 0.0;
+float Voltage_Coef = (55.0 / 1023.0);
+float U_Current_Coef = (5.0 / 511.0);
+float V_Current_Coef = (5.0 / 511.0);
+float W_Current_Coef = (5.0 / 511.0);
 
-int PWM = 160; // Current limit
+int PWM = 25; // Current limit
 
 void setup() {
-  clock_prescale_set(clock_div_2);
+  //clock_prescale_set(clock_div_2);
 
   Serial.begin(115200); // Mean 57600(becouse CPU frequency down 2)
 
@@ -59,14 +70,24 @@ void setup() {
 void loop() {
   int Hall_State = HallSensorsRead();
   MotorRun(Hall_State);
-
+ 
   unsigned long currentMillis = millis();
 
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    int sensorValue = analogRead(Vbatt);
-    BattVoltage = sensorValue * (55.0 / 1023.0);
-    Serial.println(String(Hall_State) + "," + String(BattVoltage));
+
+    Serial.println(String(U_Current) + "," + String(V_Current) + "," + String(W_Current) + "," + String(Hall_State) + "," + String(BattVoltage));
+  } else {
+    U_CurrentRAW = analogRead(Cur_U);
+    V_CurrentRAW = analogRead(Cur_V);
+    W_CurrentRAW = analogRead(Cur_W);
+    VoltageRAW = analogRead(Vbatt);
+
+    BattVoltage = VoltageRAW * Voltage_Coef;
+
+    U_Current = (U_CurrentRAW - 511) * U_Current_Coef;
+    V_Current = (V_CurrentRAW - 511) * V_Current_Coef;
+    W_Current = (W_CurrentRAW - 511) * W_Current_Coef;
   }
 }
 
@@ -76,69 +97,48 @@ int HallSensorsRead() {
 
 void MotorRun(int SensorState) {
   switch (SensorState) {
-    case 1: // 100 Step 1
-      digitalWrite(IN_U, LOW);
-      digitalWrite(IN_V, HIGH);
-      digitalWrite(IN_W, LOW);
-
-      analogWrite(PWM_U, PWM);
-      analogWrite(PWM_V, PWM);
-      analogWrite(PWM_W, 0);
+    case 1: // 100 Step 4
+      analogWrite(PWM_U, PWM); digitalWrite(IN_U, LOW);
+      analogWrite(PWM_V, 255); digitalWrite(IN_V, HIGH);
+      analogWrite(PWM_W, 0);   digitalWrite(IN_W, LOW);
       break;
-    case 2: // 010 Step 3
-      digitalWrite(IN_U, LOW);
-      digitalWrite(IN_V, LOW);
-      digitalWrite(IN_W, HIGH);
 
-      analogWrite(PWM_U, 0);
-      analogWrite(PWM_V, PWM);
-      analogWrite(PWM_W, PWM);
+    case 2: // 010 Step 6
+      analogWrite(PWM_U, 0);   digitalWrite(IN_U, LOW);
+      analogWrite(PWM_V, PWM); digitalWrite(IN_V, LOW);
+      analogWrite(PWM_W, 255); digitalWrite(IN_W, HIGH);
       break;
-    case 3: // 110 Step 2
-      digitalWrite(IN_U, LOW);
-      digitalWrite(IN_V, LOW);
-      digitalWrite(IN_W, HIGH);
 
-      analogWrite(PWM_U, PWM);
-      analogWrite(PWM_V, 0);
-      analogWrite(PWM_W, PWM);
+    case 3: // 110 Step 5
+      analogWrite(PWM_U, PWM); digitalWrite(IN_U, LOW);
+      analogWrite(PWM_V, 0);   digitalWrite(IN_V, LOW);
+      analogWrite(PWM_W, 255); digitalWrite(IN_W, HIGH);
       break;
-    case 4: // 001 Step 5
-      digitalWrite(IN_U, HIGH);
-      digitalWrite(IN_V, LOW);
-      digitalWrite(IN_W, LOW);
 
-      analogWrite(PWM_U, PWM);
-      analogWrite(PWM_V, 0);
-      analogWrite(PWM_W, PWM);
+    case 4: // 001 Step 2
+      analogWrite(PWM_U, 255); digitalWrite(IN_U, HIGH);
+      analogWrite(PWM_V, 0);   digitalWrite(IN_V, LOW);
+      analogWrite(PWM_W, PWM); digitalWrite(IN_W, LOW);
       break;
-    case 5: // 101 Step 6
-      digitalWrite(IN_U, LOW);
-      digitalWrite(IN_V, HIGH);
-      digitalWrite(IN_W, LOW);
 
-      analogWrite(PWM_U, 0);
-      analogWrite(PWM_V, PWM);
-      analogWrite(PWM_W, PWM);
+    case 5: // 101 Step 3
+      analogWrite(PWM_U, 0);   digitalWrite(IN_U, LOW);
+      analogWrite(PWM_V, 255); digitalWrite(IN_V, HIGH);
+      analogWrite(PWM_W, PWM); digitalWrite(IN_W, LOW);
       break;
-    case 6: // 011 Step 4
-      digitalWrite(IN_U, HIGH);
-      digitalWrite(IN_V, LOW);
-      digitalWrite(IN_W, LOW);
 
-      analogWrite(PWM_U, PWM);
-      analogWrite(PWM_V, PWM);
-      analogWrite(PWM_W, 0);
+    case 6: // 011 Step 1
+      analogWrite(PWM_U, 255); digitalWrite(IN_U, HIGH);
+      analogWrite(PWM_V, PWM); digitalWrite(IN_V, LOW);
+      analogWrite(PWM_W, 0);   digitalWrite(IN_W, LOW);
+
       break;
 
     default:
       // turn all the off:
-      digitalWrite(IN_U, LOW);
-      digitalWrite(IN_V, LOW);
-      digitalWrite(IN_W, LOW);
-      analogWrite(PWM_U, 0);
-      analogWrite(PWM_V, 0);
-      analogWrite(PWM_W, 0);
+      analogWrite(PWM_U, 0); digitalWrite(IN_U, LOW);
+      analogWrite(PWM_V, 0); digitalWrite(IN_V, LOW);
+      analogWrite(PWM_W, 0); digitalWrite(IN_W, LOW);
   }
 }
 
