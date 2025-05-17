@@ -2,7 +2,7 @@
 
     This is simple Arduino based 650W BLDC motor(with Hall sensors) controller.
     https://github.com/techn0man1ac/SimpleBLDC
-    
+
 */
 
 #include <avr/power.h>
@@ -25,10 +25,12 @@
 #define POT A6
 #define CWR 4
 
-unsigned long previousMillis = 0;        // will store last time LED was updated
-const long interval = 250;           // interval at which to blink (milliseconds)
+unsigned long previousMillis = 0;
+#define  interval 250 // Telemetry interval
 
-int time_ = 50;
+float BattVoltage = 0.0;
+
+int PWM = 160; // Current limit
 
 void setup() {
   clock_prescale_set(clock_div_2);
@@ -49,70 +51,98 @@ void setup() {
   setPWMPrescaler(PWM_V, 1);
   setPWMPrescaler(PWM_W, 1);
 
-  analogWrite(PWM_U, 150);
-  analogWrite(PWM_V, 150);
-  analogWrite(PWM_W, 150);
+  MotorRun(0); // Inintalization
+
+  delay(1000);
 }
 
 void loop() {
+  int Hall_State = HallSensorsRead();
+  MotorRun(Hall_State);
+
   unsigned long currentMillis = millis();
 
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    time_ = time_-1;
-    time_ = constrain(time_, 12, 50);
+    int sensorValue = analogRead(Vbatt);
+    BattVoltage = sensorValue * (55.0 / 1023.0);
+    Serial.println(String(Hall_State) + "," + String(BattVoltage));
   }
-
-  bool U_State = digitalRead(HAL_U);
-  bool V_State = digitalRead(HAL_V);
-  bool W_State = digitalRead(HAL_W);
-  
-  Serial.println(String(U_State) + "," + String(V_State) + "," + String(W_State)); // Hall sensor read
-    
-  digitalWrite(IN_U, HIGH);
-  digitalWrite(IN_V, LOW);
-  digitalWrite(IN_W, LOW);
-  delay(time_);
-  digitalWrite(IN_U, HIGH);
-  digitalWrite(IN_V, HIGH);
-  digitalWrite(IN_W, LOW);
-  delay(time_);
-  digitalWrite(IN_U, LOW);
-  digitalWrite(IN_V, HIGH);
-  digitalWrite(IN_W, LOW);
-  delay(time_);
-  digitalWrite(IN_U, LOW);
-  digitalWrite(IN_V, HIGH);
-  digitalWrite(IN_W, HIGH);
-  delay(time_);
-  digitalWrite(IN_U, LOW);
-  digitalWrite(IN_V, LOW);
-  digitalWrite(IN_W, HIGH);
-  delay(time_);
 }
 
-//Atmega 328p (Arduino Uno, Nano)
-// Frequencies
-// 5, 6   Timer0  62500 Hz
-// 9, 10   Timer1  31250 Hz
-// 3, 11   Timer2  31250 Hz
+int HallSensorsRead() {
+  return digitalRead(HAL_U) + (digitalRead(HAL_V) << 1) + (digitalRead(HAL_W) << 2);
+}
 
-// Prescalers
-// 5, 6   Timer0  1 8 64 256 1024
-// 9, 10   Timer1  1 8 64 256 1024
-// 3, 11   Timer2  1 8 32 64 128 256 1024
+void MotorRun(int SensorState) {
+  switch (SensorState) {
+    case 1: // 100 Step 1
+      digitalWrite(IN_U, LOW);
+      digitalWrite(IN_V, HIGH);
+      digitalWrite(IN_W, LOW);
 
-// Default values
-// 5, 6   Timer0 64  977Hz
-// 9, 10   Timer1 64  490Hz
-// 3, 11   Timer2 64  490Hz
+      analogWrite(PWM_U, PWM);
+      analogWrite(PWM_V, PWM);
+      analogWrite(PWM_W, 0);
+      break;
+    case 2: // 010 Step 3
+      digitalWrite(IN_U, LOW);
+      digitalWrite(IN_V, LOW);
+      digitalWrite(IN_W, HIGH);
 
-// Consequences
-// 5, 6   Timer0  delay() and millis()
-// 9, 10   Timer1  Servo library
-// 3, 11   Timer2
+      analogWrite(PWM_U, 0);
+      analogWrite(PWM_V, PWM);
+      analogWrite(PWM_W, PWM);
+      break;
+    case 3: // 110 Step 2
+      digitalWrite(IN_U, LOW);
+      digitalWrite(IN_V, LOW);
+      digitalWrite(IN_W, HIGH);
 
-void setPWMPrescaler(uint8_t pin, uint16_t prescale) {
+      analogWrite(PWM_U, PWM);
+      analogWrite(PWM_V, 0);
+      analogWrite(PWM_W, PWM);
+      break;
+    case 4: // 001 Step 5
+      digitalWrite(IN_U, HIGH);
+      digitalWrite(IN_V, LOW);
+      digitalWrite(IN_W, LOW);
+
+      analogWrite(PWM_U, PWM);
+      analogWrite(PWM_V, 0);
+      analogWrite(PWM_W, PWM);
+      break;
+    case 5: // 101 Step 6
+      digitalWrite(IN_U, LOW);
+      digitalWrite(IN_V, HIGH);
+      digitalWrite(IN_W, LOW);
+
+      analogWrite(PWM_U, 0);
+      analogWrite(PWM_V, PWM);
+      analogWrite(PWM_W, PWM);
+      break;
+    case 6: // 011 Step 4
+      digitalWrite(IN_U, HIGH);
+      digitalWrite(IN_V, LOW);
+      digitalWrite(IN_W, LOW);
+
+      analogWrite(PWM_U, PWM);
+      analogWrite(PWM_V, PWM);
+      analogWrite(PWM_W, 0);
+      break;
+
+    default:
+      // turn all the off:
+      digitalWrite(IN_U, LOW);
+      digitalWrite(IN_V, LOW);
+      digitalWrite(IN_W, LOW);
+      analogWrite(PWM_U, 0);
+      analogWrite(PWM_V, 0);
+      analogWrite(PWM_W, 0);
+  }
+}
+
+void setPWMPrescaler(uint8_t pin, uint16_t prescale) { // How to change the PWM frequency on Arduino https://www.luisllamas.es/en/change-pwm-frequency-arduino/
 
   byte mode;
 
