@@ -25,26 +25,34 @@
 #define POT A6
 #define CWR 4
 
-unsigned long previousMillis = 0;
-#define  interval 250 // Telemetry interval
+volatile bool HS_U_Phase = false;
+volatile bool HS_V_Phase = false;
+volatile bool HS_W_Phase = false;
+volatile byte Hall_State = 0;
 
 float BattVoltage = 0.0;
 int VoltageRAW = 0;
+
 int U_CurrentRAW = 0;
 int V_CurrentRAW = 0;
 int W_CurrentRAW = 0;
+
 float U_Current = 0.0;
 float V_Current = 0.0;
 float W_Current = 0.0;
+
 float Voltage_Coef = (55.0 / 1023.0);
 float U_Current_Coef = (5.0 / 511.0);
 float V_Current_Coef = (5.0 / 511.0);
 float W_Current_Coef = (5.0 / 511.0);
 
-int PWM = 25; // Current limit
+int PWM = 55; // Current limit
+
+unsigned long previousMillis = 0;
+#define  interval 250 // Telemetry interval
 
 void setup() {
-  //clock_prescale_set(clock_div_2);
+  //clock_prescale_set(clock_div_2); // Set CPU to 8 MHz mode
 
   Serial.begin(115200); // Mean 57600(becouse CPU frequency down 2)
 
@@ -62,83 +70,107 @@ void setup() {
   setPWMPrescaler(PWM_V, 1);
   setPWMPrescaler(PWM_W, 1);
 
-  MotorRun(0); // Inintalization
+  // Enable PCIE2 Bit1 and Bit3 = 1 (Port D and Port B)
+  PCICR |= B00000101;
+  // Select PCINT3/PCINT4 mean Bit3/Bit4 = 1 (Pin D11/D12)
+  PCMSK0 |= B00011000;
+  // Select PCINT21 Bit5 = 1 (Pin D5)
+  PCMSK2 |= B00100000;
 
+  MotorRun(0); // Inintalization
   delay(1000);
+  Hall_State = HallSensorsCalc();
+  MotorRun(Hall_State);
 }
 
 void loop() {
-  int Hall_State = HallSensorsRead();
-  MotorRun(Hall_State);
- 
+  U_CurrentRAW = analogRead(Cur_U);
+  V_CurrentRAW = analogRead(Cur_V);
+  W_CurrentRAW = analogRead(Cur_W);
+  VoltageRAW = analogRead(Vbatt);
+
+  BattVoltage = VoltageRAW * Voltage_Coef;
+
+  U_Current = (U_CurrentRAW - 511) * U_Current_Coef;
+  V_Current = (V_CurrentRAW - 511) * V_Current_Coef;
+  W_Current = (W_CurrentRAW - 511) * W_Current_Coef;
+
   unsigned long currentMillis = millis();
 
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
     Serial.println(String(U_Current) + "," + String(V_Current) + "," + String(W_Current) + "," + String(Hall_State) + "," + String(BattVoltage));
-  } else {
-    U_CurrentRAW = analogRead(Cur_U);
-    V_CurrentRAW = analogRead(Cur_V);
-    W_CurrentRAW = analogRead(Cur_W);
-    VoltageRAW = analogRead(Vbatt);
-
-    BattVoltage = VoltageRAW * Voltage_Coef;
-
-    U_Current = (U_CurrentRAW - 511) * U_Current_Coef;
-    V_Current = (V_CurrentRAW - 511) * V_Current_Coef;
-    W_Current = (W_CurrentRAW - 511) * W_Current_Coef;
   }
 }
 
-int HallSensorsRead() {
-  return digitalRead(HAL_U) + (digitalRead(HAL_V) << 1) + (digitalRead(HAL_W) << 2);
+ISR (PCINT0_vect)
+{
+  HS_V_Phase = digitalRead(HAL_V);
+  HS_W_Phase = digitalRead(HAL_W);
+  Hall_State = HallSensorsCalc();
+  MotorRun(Hall_State);
+}
+
+ISR (PCINT2_vect)
+{
+  HS_U_Phase = digitalRead(HAL_U);
+  Hall_State = HallSensorsCalc();
+  MotorRun(Hall_State);
+}
+
+int HallSensorsCalc() {
+  return HS_U_Phase + (HS_V_Phase << 1) + (HS_W_Phase << 2);
 }
 
 void MotorRun(int SensorState) {
   switch (SensorState) {
     case 1: // 100 Step 4
       analogWrite(PWM_U, PWM); digitalWrite(IN_U, LOW);
-      analogWrite(PWM_V, 255); digitalWrite(IN_V, HIGH);
+      analogWrite(PWM_V, PWM); digitalWrite(IN_V, HIGH);
       analogWrite(PWM_W, 0);   digitalWrite(IN_W, LOW);
       break;
 
     case 2: // 010 Step 6
       analogWrite(PWM_U, 0);   digitalWrite(IN_U, LOW);
       analogWrite(PWM_V, PWM); digitalWrite(IN_V, LOW);
-      analogWrite(PWM_W, 255); digitalWrite(IN_W, HIGH);
+      analogWrite(PWM_W, PWM); digitalWrite(IN_W, HIGH);
       break;
 
     case 3: // 110 Step 5
       analogWrite(PWM_U, PWM); digitalWrite(IN_U, LOW);
       analogWrite(PWM_V, 0);   digitalWrite(IN_V, LOW);
-      analogWrite(PWM_W, 255); digitalWrite(IN_W, HIGH);
+      analogWrite(PWM_W, PWM); digitalWrite(IN_W, HIGH);
       break;
 
     case 4: // 001 Step 2
-      analogWrite(PWM_U, 255); digitalWrite(IN_U, HIGH);
+      analogWrite(PWM_U, PWM); digitalWrite(IN_U, HIGH);
       analogWrite(PWM_V, 0);   digitalWrite(IN_V, LOW);
       analogWrite(PWM_W, PWM); digitalWrite(IN_W, LOW);
       break;
 
     case 5: // 101 Step 3
       analogWrite(PWM_U, 0);   digitalWrite(IN_U, LOW);
-      analogWrite(PWM_V, 255); digitalWrite(IN_V, HIGH);
+      analogWrite(PWM_V, PWM); digitalWrite(IN_V, HIGH);
       analogWrite(PWM_W, PWM); digitalWrite(IN_W, LOW);
       break;
 
     case 6: // 011 Step 1
-      analogWrite(PWM_U, 255); digitalWrite(IN_U, HIGH);
+      analogWrite(PWM_U, PWM); digitalWrite(IN_U, HIGH);
       analogWrite(PWM_V, PWM); digitalWrite(IN_V, LOW);
       analogWrite(PWM_W, 0);   digitalWrite(IN_W, LOW);
 
       break;
 
     default:
-      // turn all the off:
+      // turn off all transistors and read hall sensors:
       analogWrite(PWM_U, 0); digitalWrite(IN_U, LOW);
       analogWrite(PWM_V, 0); digitalWrite(IN_V, LOW);
       analogWrite(PWM_W, 0); digitalWrite(IN_W, LOW);
+      // Read Hall sensors
+      HS_U_Phase = digitalRead(HAL_U);
+      HS_V_Phase = digitalRead(HAL_V);
+      HS_W_Phase = digitalRead(HAL_W);
   }
 }
 
