@@ -84,10 +84,6 @@ void loop() {
   V_CurrentRAW = analogRead(Cur_V);
   W_CurrentRAW = analogRead(Cur_W);
 
-  HS_U_Phase = digitalRead(HAL_U);
-  HS_V_Phase = digitalRead(HAL_V);
-  HS_W_Phase = digitalRead(HAL_W);
-
   VoltageRAW = analogRead(Vbatt);
 
   BattVoltage = VoltageRAW * Voltage_Coef;
