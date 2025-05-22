@@ -7005,6 +7005,16 @@
 	)
 	(wire
 		(pts
+			(xy 31.75 114.3) (xy 40.64 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "36c8a8e4-5676-4b2a-bfc2-b3844d3a782f")
+	)
+	(wire
+		(pts
 			(xy 128.27 45.72) (xy 128.27 39.37)
 		)
 		(stroke
@@ -7032,6 +7042,16 @@
 			(type default)
 		)
 		(uuid "38c059bc-094f-4584-adaa-39b0d32ee084")
+	)
+	(wire
+		(pts
+			(xy 31.75 127) (xy 40.64 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "399a72b7-8242-4449-a90a-e974246769b4")
 	)
 	(wire
 		(pts
@@ -7152,16 +7172,6 @@
 			(type default)
 		)
 		(uuid "3f324f4c-2d6e-42b2-b400-4cd019b110c8")
-	)
-	(wire
-		(pts
-			(xy 31.75 127) (xy 40.64 127)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3f8dd7db-549e-4718-a93d-2a1a4f3189a4")
 	)
 	(wire
 		(pts
@@ -7562,6 +7572,16 @@
 			(type default)
 		)
 		(uuid "5e5da4e6-614a-4e54-8a6d-734d34af6628")
+	)
+	(wire
+		(pts
+			(xy 31.75 116.84) (xy 40.64 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5fb50514-0642-4694-abfe-9b7748c45cd0")
 	)
 	(wire
 		(pts
@@ -8355,6 +8375,16 @@
 	)
 	(wire
 		(pts
+			(xy 31.75 129.54) (xy 40.64 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a30d0df5-bc98-4b24-8714-6266f801c9b2")
+	)
+	(wire
+		(pts
 			(xy 269.24 154.94) (xy 264.16 154.94)
 		)
 		(stroke
@@ -8552,16 +8582,6 @@
 			(type default)
 		)
 		(uuid "ba70f26a-9f70-4f8f-80ad-502708afed40")
-	)
-	(wire
-		(pts
-			(xy 31.75 116.84) (xy 40.64 116.84)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "bac95916-c8a0-4297-9411-40902398e9b5")
 	)
 	(wire
 		(pts
@@ -9025,16 +9045,6 @@
 	)
 	(wire
 		(pts
-			(xy 31.75 114.3) (xy 40.64 114.3)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "dad1f83c-ac9e-4cdf-aa51-10955c498784")
-	)
-	(wire
-		(pts
 			(xy 53.34 38.1) (xy 53.34 40.64)
 		)
 		(stroke
@@ -9072,16 +9082,6 @@
 			(type default)
 		)
 		(uuid "dcf9dff4-1e3f-472c-9986-34dba1cf7341")
-	)
-	(wire
-		(pts
-			(xy 31.75 129.54) (xy 40.64 129.54)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "de7b6984-064d-402e-af2d-7f13ea1c906f")
 	)
 	(wire
 		(pts
@@ -9563,16 +9563,6 @@
 		)
 		(uuid "0761d241-af9e-44eb-b482-5bf24d95db0e")
 	)
-	(label "HAL_W"
-		(at 31.75 127 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "0d48727e-b60e-4bfb-8841-c4f858c81976")
-	)
 	(label "W_OUT"
 		(at 123.19 82.55 270)
 		(effects
@@ -9683,26 +9673,6 @@
 		)
 		(uuid "41d0f889-1f77-459d-acab-0d042a3eb9c4")
 	)
-	(label "IN_W"
-		(at 31.75 114.3 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "427a6bc3-bb9a-484e-98f6-1ac12f025a91")
-	)
-	(label "IN_V"
-		(at 31.75 116.84 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "5a44f6be-00a6-4455-a492-7f0deec66de7")
-	)
 	(label "PWM_W"
 		(at 209.55 139.7 0)
 		(effects
@@ -9753,6 +9723,16 @@
 		)
 		(uuid "86221e27-3e3a-4c16-9c4a-3e14628cbf75")
 	)
+	(label "IN_V"
+		(at 31.75 127 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "88e1b105-a362-4ad2-b85d-d66255aed928")
+	)
 	(label "U_IN"
 		(at 165.1 24.13 180)
 		(effects
@@ -9793,6 +9773,16 @@
 		)
 		(uuid "99c565ab-6799-4d4b-aa93-21bb60c34d02")
 	)
+	(label "HAL_V"
+		(at 31.75 114.3 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9cb4de5c-83ff-454a-bfbb-3b6bb58276f8")
+	)
 	(label "Vin"
 		(at 115.57 26.67 0)
 		(effects
@@ -9822,6 +9812,16 @@
 			(justify right bottom)
 		)
 		(uuid "ae5cdcfa-56e1-45d0-a096-87f2296f6405")
+	)
+	(label "HAL_W"
+		(at 31.75 116.84 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b8e9f65b-04f2-47e9-b18c-e4564c48e658")
 	)
 	(label "Cur_W"
 		(at 68.58 121.92 0)
@@ -9893,6 +9893,16 @@
 		)
 		(uuid "cf168b6c-105e-44c3-8921-5b0049fc0790")
 	)
+	(label "IN_W"
+		(at 31.75 129.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e1d94e23-fc45-4123-99cf-c198e4ab5f74")
+	)
 	(label "W_IN"
 		(at 165.1 116.84 180)
 		(effects
@@ -9922,16 +9932,6 @@
 			(justify left bottom)
 		)
 		(uuid "e7fee922-83b4-40f1-9191-d7c731cb9c59")
-	)
-	(label "HAL_V"
-		(at 31.75 129.54 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "ea45cb39-b39f-4b89-9eeb-d972c6fba642")
 	)
 	(label "Cur_W"
 		(at 173.99 140.97 0)

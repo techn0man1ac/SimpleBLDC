@@ -13,11 +13,11 @@
 #define PWM_V 9
 #define PWM_W 3
 #define IN_U 8
-#define IN_V 7
-#define IN_W 6
+#define IN_V 11
+#define IN_W 12
 #define HAL_U 5
-#define HAL_V 12
-#define HAL_W 11
+#define HAL_V 6
+#define HAL_W 7
 #define Vbatt A0
 #define Cur_U A1
 #define Cur_V A2
@@ -25,9 +25,6 @@
 #define POT A6
 #define CWR 4
 
-volatile bool HS_U_Phase = false;
-volatile bool HS_V_Phase = false;
-volatile bool HS_W_Phase = false;
 volatile byte Hall_State = 0;
 
 float BattVoltage = 0.0;
@@ -46,7 +43,7 @@ float U_Current_Coef = (5.0 / 511.0);
 float V_Current_Coef = (5.0 / 511.0);
 float W_Current_Coef = (5.0 / 511.0);
 
-int PWM = 55; // Current limit
+int PWM = 185; // Current limit
 
 unsigned long previousMillis = 0;
 #define  interval 250 // Telemetry interval
@@ -69,17 +66,16 @@ void setup() {
   setPWMPrescaler(PWM_U, 1);
   setPWMPrescaler(PWM_V, 1);
   setPWMPrescaler(PWM_W, 1);
-
-  // Enable PCIE2 Bit1 and Bit3 = 1 (Port D and Port B)
-  PCICR |= B00000101;
-  // Select PCINT3/PCINT4 mean Bit3/Bit4 = 1 (Pin D11/D12)
-  PCMSK0 |= B00011000;
-  // Select PCINT21 Bit5 = 1 (Pin D5)
-  PCMSK2 |= B00100000;
+  
+  // Using Arduino Interrupts https://dronebotworkshop.com/interrupts/
+  // Enable PCIE2 Bit2 = 1 (Port D)
+  PCICR |= B00000100;
+  // Select PCINT21, PCINT22, PCINT23 = 1 (Pin D5, D6, D7)
+  PCMSK2 |= B11100000;
 
   MotorRun(0); // Inintalization
   delay(1000);
-  Hall_State = HallSensorsCalc();
+  Hall_State = HallSensorsRead();
   MotorRun(Hall_State);
 }
 
@@ -87,6 +83,11 @@ void loop() {
   U_CurrentRAW = analogRead(Cur_U);
   V_CurrentRAW = analogRead(Cur_V);
   W_CurrentRAW = analogRead(Cur_W);
+
+  HS_U_Phase = digitalRead(HAL_U);
+  HS_V_Phase = digitalRead(HAL_V);
+  HS_W_Phase = digitalRead(HAL_W);
+
   VoltageRAW = analogRead(Vbatt);
 
   BattVoltage = VoltageRAW * Voltage_Coef;
@@ -104,25 +105,16 @@ void loop() {
   }
 }
 
-ISR (PCINT0_vect)
-{
-  HS_V_Phase = digitalRead(HAL_V);
-  HS_W_Phase = digitalRead(HAL_W);
-  Hall_State = HallSensorsCalc();
+ISR (PCINT2_vect){
+  Hall_State = HallSensorsRead();
   MotorRun(Hall_State);
 }
 
-ISR (PCINT2_vect)
-{
-  HS_U_Phase = digitalRead(HAL_U);
-  Hall_State = HallSensorsCalc();
-  MotorRun(Hall_State);
+int HallSensorsRead() {
+  return PIND >> 5;
 }
 
-int HallSensorsCalc() {
-  return HS_U_Phase + (HS_V_Phase << 1) + (HS_W_Phase << 2);
-}
-
+// Six-Step (Trapezoidal) Commutation https://onlinedocs.microchip.com/oxy/GUID-ED5A4EC0-70D9-40E8-82A4-9EE711C91C4E-en-US-11/GUID-A2E50F02-E898-425F-B2A2-36E161DE810B.html
 void MotorRun(int SensorState) {
   switch (SensorState) {
     case 1: // 100 Step 4
@@ -168,13 +160,12 @@ void MotorRun(int SensorState) {
       analogWrite(PWM_V, 0); digitalWrite(IN_V, LOW);
       analogWrite(PWM_W, 0); digitalWrite(IN_W, LOW);
       // Read Hall sensors
-      HS_U_Phase = digitalRead(HAL_U);
-      HS_V_Phase = digitalRead(HAL_V);
-      HS_W_Phase = digitalRead(HAL_W);
+      Hall_State = HallSensorsRead();
   }
 }
 
-void setPWMPrescaler(uint8_t pin, uint16_t prescale) { // How to change the PWM frequency on Arduino https://www.luisllamas.es/en/change-pwm-frequency-arduino/
+// How to change the PWM frequency on Arduino https://www.luisllamas.es/en/change-pwm-frequency-arduino/
+void setPWMPrescaler(uint8_t pin, uint16_t prescale) { 
 
   byte mode;
 
