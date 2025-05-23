@@ -43,10 +43,10 @@ float U_Current_Coef = (5.0 / 511.0);
 float V_Current_Coef = (5.0 / 511.0);
 float W_Current_Coef = (5.0 / 511.0);
 
-int PWM = 185; // Current limit
+int PWM = 165; // Current limit
 
 unsigned long previousMillis = 0;
-#define  interval 250 // Telemetry interval
+#define  interval 100 // Telemetry interval
 
 void setup() {
   //clock_prescale_set(clock_div_2); // Set CPU to 8 MHz mode
@@ -88,9 +88,9 @@ void loop() {
 
   BattVoltage = VoltageRAW * Voltage_Coef;
 
-  U_Current = (U_CurrentRAW - 511) * U_Current_Coef;
-  V_Current = (V_CurrentRAW - 511) * V_Current_Coef;
-  W_Current = (W_CurrentRAW - 511) * W_Current_Coef;
+  U_Current = (U_CurrentRAW - 518) * U_Current_Coef;
+  V_Current = (V_CurrentRAW - 518) * V_Current_Coef;
+  W_Current = (W_CurrentRAW - 516) * W_Current_Coef;
 
   unsigned long currentMillis = millis();
 
