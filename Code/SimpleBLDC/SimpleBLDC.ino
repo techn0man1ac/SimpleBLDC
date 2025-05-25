@@ -5,9 +5,12 @@
 
 */
 
-#include <avr/power.h>
+#define SET_PWM_16Khz true // Set PWM transistors frequency 16 kHz
 
-//#define F_CPU 800000UL  // CPU frequency set to 8 MHz mode
+#if SET_PWM_16Khz == true
+#include <avr/power.h>
+#define F_CPU 800000UL  // CPU frequency set to 8 MHz mode
+#endif
 
 #define PWM_U 10
 #define PWM_V 9
@@ -46,12 +49,16 @@ float W_Current_Coef = (5.0 / 511.0);
 int PWM = 165; // Current limit
 
 unsigned long previousMillis = 0;
-#define  interval 100 // Telemetry interval
+int interval = 100; // Telemetry interval
 
 void setup() {
-  //clock_prescale_set(clock_div_2); // Set CPU to 8 MHz mode
+  Serial.begin(115200);
 
-  Serial.begin(115200); // Mean 57600(becouse CPU frequency down 2)
+#if SET_PWM_16Khz == true
+  clock_prescale_set(clock_div_2); // Set CPU to 8 MHz mode
+  Serial.begin(230400); // Mean 115200(becouse CPU frequency down 2)
+  interval = interval / 2;
+#endif
 
   pinMode(PWM_U, OUTPUT);
   pinMode(PWM_V, OUTPUT);
@@ -66,7 +73,7 @@ void setup() {
   setPWMPrescaler(PWM_U, 1);
   setPWMPrescaler(PWM_V, 1);
   setPWMPrescaler(PWM_W, 1);
-  
+
   // Using Arduino Interrupts https://dronebotworkshop.com/interrupts/
   // Enable PCIE2 Bit2 = 1 (Port D)
   PCICR |= B00000100;
@@ -101,7 +108,7 @@ void loop() {
   }
 }
 
-ISR (PCINT2_vect){
+ISR (PCINT2_vect) {
   Hall_State = HallSensorsRead();
   MotorRun(Hall_State);
 }
@@ -161,7 +168,7 @@ void MotorRun(int SensorState) {
 }
 
 // How to change the PWM frequency on Arduino https://www.luisllamas.es/en/change-pwm-frequency-arduino/
-void setPWMPrescaler(uint8_t pin, uint16_t prescale) { 
+void setPWMPrescaler(uint8_t pin, uint16_t prescale) {
 
   byte mode;
 
