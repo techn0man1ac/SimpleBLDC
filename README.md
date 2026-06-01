@@ -1,6 +1,8 @@
 # SimpleBLDC
 
-This is simple Arduino based 650W BLDC motor(with Hall sensors) controller. Designed with [KiCAD](https://www.kicad.org/). This controller has version V0.1, which means it is still under development. **The source files can be changed.**
+This is simple Arduino based 650W BLDC motor(with Hall sensors) controller. Designed with [KiCAD](https://www.kicad.org/). This controller has version V0.1, which means it is still under development. In addition, the project supports Field-Oriented Control (FOC), which is implemented using the [SimpleFOC library](https://github.com/simplefoc). 
+
+All of this together enables a wide range of functions, such as precise rotor positioning (servo mode), phase current control, speed control, and much, much more. **Source code files (HW or SW) may change over time.**
 
 ![SimpleBLDC PCB in real life](https://raw.githubusercontent.com/techn0man1ac/SimpleBLDC/refs/heads/main/PCB/IMGs/Real_BLDC_Face.jpg)
 
@@ -42,5 +44,3 @@ The bottom layer contains mainly earth and power tracks.
 Board sizes is 72 x 99 mm:
 
 ![BLDC motor driver schematic](https://raw.githubusercontent.com/techn0man1ac/SimpleBLDC/refs/heads/main/PCB/IMGs/PCB_sizes.png)
-
-
