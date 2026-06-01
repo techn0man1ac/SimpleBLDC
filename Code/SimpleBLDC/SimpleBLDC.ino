@@ -5,12 +5,7 @@
 
 */
 
-#define SET_PWM_16Khz true // Set PWM transistors frequency 16 kHz
-
-#if SET_PWM_16Khz == true
-#include <avr/power.h>
-#define F_CPU 800000UL  // CPU frequency set to 8 MHz mode
-#endif
+#include <SimpleFOC.h> // https://docs.simplefoc.com/
 
 #define PWM_U 10
 #define PWM_V 9
@@ -22,57 +17,47 @@
 #define HAL_V 6
 #define HAL_W 7
 #define Vbatt A0
-#define Cur_U A1
-#define Cur_V A2
-#define Cur_W A3
-#define POT A6
-#define CWR 4
 
-volatile byte Hall_State = 0;
+// BLDC motor & driver instance
+// BLDCMotor motor = BLDCMotor(pole pair number);
+BLDCMotor motor = BLDCMotor(15, 0.4, 20.0);
+// BLDC driver instance
+BLDCDriver3PWM driver = BLDCDriver3PWM(PWM_U, PWM_V, PWM_W, IN_U, IN_V, IN_W);
 
-float BattVoltage = 0.0;
-int VoltageRAW = 0;
+// Hall sensor instance
+// HallSensor(int hallA, int hallB , int cpr, int index)
+//  - hallA, hallB, hallC    - HallSensor A, B and C pins
+//  - pp                     - pole pairs
+HallSensor sensor = HallSensor(HAL_U, HAL_V, HAL_W, 15);
 
-int U_CurrentRAW = 0;
-int V_CurrentRAW = 0;
-int W_CurrentRAW = 0;
+// velocity set point variable
+float target_velocity = 0;
+// instantiate the commander
+Commander command = Commander(Serial);
 
-float U_Current = 0.0;
-float V_Current = 0.0;
-float W_Current = 0.0;
+void doTarget(char* cmd) {
+  command.scalar(&target_velocity, cmd);
+}
 
-float Voltage_Coef = (55.0 / 1023.0);
-float U_Current_Coef = (5.0 / 511.0);
-float V_Current_Coef = (5.0 / 511.0);
-float W_Current_Coef = (5.0 / 511.0);
+void doLimit(char* cmd) {
+  command.scalar(&motor.voltage_limit, cmd);
+}
 
-int PWM = 165; // Current limit
-
-unsigned long previousMillis = 0;
-int interval = 100; // Telemetry interval
+ISR (PCINT2_vect) {
+  sensor.update();
+}
 
 void setup() {
+
+  // use monitoring with serial
   Serial.begin(115200);
+  // enable more verbose output for debugging
+  // comment out if not needed
+  SimpleFOCDebug::enable(&Serial);
 
-#if SET_PWM_16Khz == true
-  clock_prescale_set(clock_div_2); // Set CPU to 8 MHz mode
-  Serial.begin(230400); // Mean 115200(becouse CPU frequency down 2)
-  interval = interval / 2;
-#endif
-
-  pinMode(PWM_U, OUTPUT);
-  pinMode(PWM_V, OUTPUT);
-  pinMode(PWM_W, OUTPUT);
-  pinMode(IN_U, OUTPUT);
-  pinMode(IN_V, OUTPUT);
-  pinMode(IN_W, OUTPUT);
   pinMode(HAL_U, INPUT);
   pinMode(HAL_V, INPUT);
   pinMode(HAL_W, INPUT);
-
-  setPWMPrescaler(PWM_U, 1);
-  setPWMPrescaler(PWM_V, 1);
-  setPWMPrescaler(PWM_W, 1);
 
   // Using Arduino Interrupts https://dronebotworkshop.com/interrupts/
   // Enable PCIE2 Bit2 = 1 (Port D)
@@ -80,126 +65,86 @@ void setup() {
   // Select PCINT21, PCINT22, PCINT23 = 1 (Pin D5, D6, D7)
   PCMSK2 |= B11100000;
 
-  MotorRun(0); // Inintalization
-  delay(1000);
-  Hall_State = HallSensorsRead();
-  MotorRun(Hall_State);
+  // initialize sensor sensor hardware
+  sensor.init();
+
+  // link the motor to the sensor
+  motor.linkSensor(&sensor);
+
+  // driver config
+  // pwm frequency to be used [Hz]
+  // for atmega328 fixed to 32kHz
+  // esp32/stm32/teensy configurable
+  driver.pwm_frequency = 32000;
+  // power supply voltage [V]
+  driver.voltage_power_supply = getBatteryVoltage();
+  driver.init();
+  // link the motor and the driver
+  motor.linkDriver(&driver);
+
+  // aligning voltage [V]
+  motor.voltage_sensor_align = 3;
+
+  // set motion control loop to be used
+  motor.controller = MotionControlType::velocity;
+
+  // contoller configuration
+  // default parameters in defaults.h
+
+  // velocity PI controller parameters
+  motor.PID_velocity.P = 0.2f;
+  motor.PID_velocity.I = 2;
+  motor.PID_velocity.D = 0;
+  // default voltage_power_supply
+  motor.voltage_limit = 6;
+  // jerk control using voltage voltage ramp
+  // default value is 300 volts per sec  ~ 0.3V per millisecond
+  motor.PID_velocity.output_ramp = 1000;
+
+  // velocity low pass filtering time constant
+  motor.LPF_velocity.Tf = 0.01f;
+
+  // comment out if not needed
+  motor.useMonitoring(Serial);
+
+  // initialize motor
+  motor.init();
+  // align sensor and start FOC
+  motor.initFOC();
+
+  // add target command T
+  command.add('T', doTarget, "target voltage");
+  command.add('L', doLimit, "voltage limit");
+
+  Serial.println(F("Motor ready."));
+  Serial.println(F("Set the target velocity using serial terminal:"));
+  _delay(1000);
 }
+
 
 void loop() {
-  U_CurrentRAW = analogRead(Cur_U);
-  V_CurrentRAW = analogRead(Cur_V);
-  W_CurrentRAW = analogRead(Cur_W);
+  // main FOC algorithm function
+  // the faster you run this function the better
+  // Arduino UNO loop  ~1kHz
+  // Bluepill loop ~10kHz
+  motor.loopFOC();
+  float battVoltage = getBatteryVoltage();
+  driver.voltage_power_supply = battVoltage;
+  // Motion control function
+  // velocity, position or voltage (defined in motor.controller)
+  // this function can be run at much lower frequency than loopFOC() function
+  // You can also use motor.move() and set the motor.target in the code
+  motor.move(target_velocity);
 
-  VoltageRAW = analogRead(Vbatt);
+  // function intended to be used with serial plotter to monitor motor variables
+  // significantly slowing the execution down!!!!
+  // motor.monitor();
 
-  BattVoltage = VoltageRAW * Voltage_Coef;
-
-  U_Current = (U_CurrentRAW - 518) * U_Current_Coef;
-  V_Current = (V_CurrentRAW - 518) * V_Current_Coef;
-  W_Current = (W_CurrentRAW - 516) * W_Current_Coef;
-
-  unsigned long currentMillis = millis();
-
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-
-    Serial.println(String(U_Current) + "," + String(V_Current) + "," + String(W_Current) + "," + String(Hall_State) + "," + String(BattVoltage));
-  }
+  // user communication
+  command.run();
+  Serial.println(battVoltage, 2);
 }
 
-ISR (PCINT2_vect) {
-  Hall_State = HallSensorsRead();
-  MotorRun(Hall_State);
-}
-
-int HallSensorsRead() {
-  return PIND >> 5;
-}
-
-// Six-Step (Trapezoidal) Commutation https://onlinedocs.microchip.com/oxy/GUID-ED5A4EC0-70D9-40E8-82A4-9EE711C91C4E-en-US-11/GUID-A2E50F02-E898-425F-B2A2-36E161DE810B.html
-void MotorRun(int SensorState) {
-  switch (SensorState) {
-    case 1: // 100 Step 4
-      analogWrite(PWM_U, PWM); digitalWrite(IN_U, LOW);
-      analogWrite(PWM_V, PWM); digitalWrite(IN_V, HIGH);
-      analogWrite(PWM_W, 0);   digitalWrite(IN_W, LOW);
-      break;
-
-    case 2: // 010 Step 6
-      analogWrite(PWM_U, 0);   digitalWrite(IN_U, LOW);
-      analogWrite(PWM_V, PWM); digitalWrite(IN_V, LOW);
-      analogWrite(PWM_W, PWM); digitalWrite(IN_W, HIGH);
-      break;
-
-    case 3: // 110 Step 5
-      analogWrite(PWM_U, PWM); digitalWrite(IN_U, LOW);
-      analogWrite(PWM_V, 0);   digitalWrite(IN_V, LOW);
-      analogWrite(PWM_W, PWM); digitalWrite(IN_W, HIGH);
-      break;
-
-    case 4: // 001 Step 2
-      analogWrite(PWM_U, PWM); digitalWrite(IN_U, HIGH);
-      analogWrite(PWM_V, 0);   digitalWrite(IN_V, LOW);
-      analogWrite(PWM_W, PWM); digitalWrite(IN_W, LOW);
-      break;
-
-    case 5: // 101 Step 3
-      analogWrite(PWM_U, 0);   digitalWrite(IN_U, LOW);
-      analogWrite(PWM_V, PWM); digitalWrite(IN_V, HIGH);
-      analogWrite(PWM_W, PWM); digitalWrite(IN_W, LOW);
-      break;
-
-    case 6: // 011 Step 1
-      analogWrite(PWM_U, PWM); digitalWrite(IN_U, HIGH);
-      analogWrite(PWM_V, PWM); digitalWrite(IN_V, LOW);
-      analogWrite(PWM_W, 0);   digitalWrite(IN_W, LOW);
-
-      break;
-
-    default:
-      // turn off all transistors and read hall sensors:
-      analogWrite(PWM_U, 0); digitalWrite(IN_U, LOW);
-      analogWrite(PWM_V, 0); digitalWrite(IN_V, LOW);
-      analogWrite(PWM_W, 0); digitalWrite(IN_W, LOW);
-      // Read Hall sensors
-      Hall_State = HallSensorsRead();
-  }
-}
-
-// How to change the PWM frequency on Arduino https://www.luisllamas.es/en/change-pwm-frequency-arduino/
-void setPWMPrescaler(uint8_t pin, uint16_t prescale) {
-
-  byte mode;
-
-  if (pin == 5 || pin == 6 || pin == 9 || pin == 10) {
-    switch (prescale) {
-      case    1: mode = 0b001; break;
-      case    8: mode = 0b010; break;
-      case   64: mode = 0b011; break;
-      case  256: mode = 0b100; break;
-      case 1024: mode = 0b101; break;
-      default: return;
-    }
-
-  } else if (pin == 3 || pin == 11) {
-    switch (prescale) {
-      case    1: mode = 0b001; break;
-      case    8: mode = 0b010; break;
-      case   32: mode = 0b011; break;
-      case   64: mode = 0b100; break;
-      case  128: mode = 0b101; break;
-      case  256: mode = 0b110; break;
-      case 1024: mode = 0b111; break;
-      default: return;
-    }
-  }
-
-  if (pin == 5 || pin == 6) {
-    TCCR0B = TCCR0B & 0b11111000 | mode;
-  } else if (pin == 9 || pin == 10) {
-    TCCR1B = TCCR1B & 0b11111000 | mode;
-  } else if (pin == 3 || pin == 11) {
-    TCCR2B = TCCR2B & 0b11111000 | mode;
-  }
+float getBatteryVoltage() {
+  return analogRead(Vbatt) * (55.0 / 1023.0);
 }
